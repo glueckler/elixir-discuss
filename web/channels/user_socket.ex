@@ -3,6 +3,11 @@ defmodule Discuss.UserSocket do
 
   ## Channels
   # channel "room:*", Discuss.RoomChannel
+  # the :* is kinda like the catch all in a route
+  # kinda like: get "/comments/:id", CommentController, :join, :handle_in
+  # kinda like a socket endpoint
+  # this wildcard value is the first agument to the join() function in the CommentsChannel module
+  channel "comments:*", Discuss.CommentsChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -19,8 +24,17 @@ defmodule Discuss.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket) do
-    {:ok, socket}
+
+
+  # socket is kinda like the conn ob
+  def connect(%{"token" => token}, socket) do
+    IO.inspect token
+    case Phoenix.Token.verify(socket, "key", token) do
+      {:ok, user_id} ->
+        {:ok, assign(socket, :user_id, user_id)}
+      {:error, _err} ->
+        :error
+    end
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:

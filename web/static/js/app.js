@@ -11,11 +11,14 @@
 //
 // If you no longer want to use a dependency, remember
 // to also remove its path from "config.paths.watched".
-import "phoenix_html"
+import 'phoenix_html'
 
 // Import local files
 //
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
+// get the sockets going!!
+// not importing anything anymore.. using window.createSocket
 // import socket from "./socket"
+import './socket'

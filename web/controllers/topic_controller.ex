@@ -5,10 +5,28 @@ defmodule Discuss.TopicController do
   # for access to Topic
   alias Discuss.Topic
 
+  # adding this will run plug before any function in module
+  # plug Discuss.Plugs.RequireAuth
+  # add guard clause to adjust for only necessary functions
+  plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
+
+  # use check topic owner to verify certain actions
+  # this will prevent anyone from making requests outside of the browser
+  # by passign an atom, controller will look at TopicContoller (itself)
+  # and call the function before edit, update... etc
+  plug :check_topic_owner when action in [:edit, :update, :delete]
+
+
+
   def index(conn, _params) do
     IO.inspect(conn.assigns) # keep in mind that this is conn.assign when writing
     topics = Repo.all(Topic)
     render conn, "index.html", topics: topics
+  end
+
+  def show(conn, %{"id" => topic_id}) do
+    topic = Repo.get!(Topic, topic_id)
+    render conn, "show.html", topic: topic
   end
 
   def new(conn, _params) do
@@ -28,7 +46,14 @@ defmodule Discuss.TopicController do
   end
 
   def create(conn, %{"topic" => topic}) do
-    changeset = Topic.changeset(%Topic{}, topic)
+    # no longer relevant since we now have an association btween users and topics
+    # changeset = Topic.changeset(%Topic{}, topic)
+
+    # get current user struct so that we can build association with topic
+    changeset = conn.assigns.user # starts as %{}User
+      |> build_assoc(:topics) # becomes like %{}Topic
+      |> Topic.changeset(topic)
+
 
     case Repo.insert(changeset) do
       {:ok, _topic} ->
@@ -80,5 +105,20 @@ defmodule Discuss.TopicController do
     conn
     |> put_flash(:info, "Topic Deleted")
     |> redirect(to: topic_path(conn, :index))
+  end
+
+  # note that params is coming from the conn object not params like when forms are submitted
+  # this is how function plugs do
+  def check_topic_owner(%{params: %{"id" => topic_id}} = conn, _params) do
+    topic = Repo.get(Topic, topic_id)
+    if topic && topic.user_id == conn.assigns.user.id do
+      conn
+    else
+      conn
+        |> put_flash(:error, "you can't do that, homie")
+        |> redirect(to: topic_path(conn, :index))
+        |> halt()
+    end
+
   end
 end

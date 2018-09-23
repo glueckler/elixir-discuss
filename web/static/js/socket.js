@@ -3,9 +3,11 @@
 
 // To use Phoenix channels, the first step is to import Socket
 // and connect at the socket path in "lib/my_app/endpoint.ex":
-import {Socket} from "phoenix"
+import { Socket } from 'phoenix'
 
-let socket = new Socket("/socket", {params: {token: window.userToken}})
+// by the way, the params object is what will appear as the first argument in the
+// user_socket.ex > join(params) function
+const socket = new Socket('/socket', { params: { token: window.userToken } })
 
 // When you connect, you'll often need to authenticate the client.
 // For example, imagine you have an authentication plug, `MyAuth`,
@@ -53,10 +55,50 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 
 socket.connect()
 
-// Now that you are connected, you can join channels with a topic:
-let channel = socket.channel("topic:subtopic", {})
-channel.join()
-  .receive("ok", resp => { console.log("Joined successfully", resp) })
-  .receive("error", resp => { console.log("Unable to join", resp) })
+const createSocket = topicId => {
+  // Now that you are connected, you can join channels with a topic:
+  const channel = socket.channel(`comments:${topicId}`, {})
+  channel
+    .join()
+    .receive('ok', resp => {
+      console.log('Joined successfully', resp)
+      renderComments(resp.comments)
+    })
+    .receive('error', resp => {
+      console.log('Unable to join', resp)
+    })
+  // handle new comments
+  channel.on(`comments:${topicId}:new`, renderComment)
 
-export default socket
+  document.querySelector('button').addEventListener('click', () => {
+    const content = document.querySelector('textarea').value
+
+    channel.push('comment:add', { content })
+  })
+}
+
+const renderCommentListItem = comment => `
+    <li class="collection-item">
+      ${comment.content}
+      <div class="secondary-content">${
+        comment.user ? comment.user.email : 'anon'
+      }</div>
+    </li>
+  `
+
+// render singe comment
+const renderComment = ({ comment }) => {
+  const rendered = renderCommentListItem(comment)
+  document.querySelector('.collection').innerHTML += rendered
+}
+
+// render the comments to page
+const renderComments = comments => {
+  const rendered = comments.map(renderCommentListItem)
+  document.querySelector('.collection').innerHTML = rendered.join('')
+}
+
+window.createSocket = createSocket
+
+// no longer necessary
+// export default socket
