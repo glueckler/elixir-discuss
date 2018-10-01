@@ -32,6 +32,14 @@ config :ueberauth, Ueberauth,
     github: { Ueberauth.Strategy.Github, [default_scope: "user,public_repo"]}
   ]
 
+IO.puts "\n\n\n\n"
+IO.puts "GITHUB_CLIENT_ID: "
+IO.puts System.get_env("GITHUB_CLIENT_ID")
+IO.puts "WARNING: if the environment variable wasn't displayed above.. things are bad"
+IO.puts "try running >> source .env before mix Phoenix.server"
+IO.puts "\n\n\n\n"
+
+
 config :ueberauth, Ueberauth.Strategy.Github.OAuth,
-  client_id: "0cd0a65ebf59aa3181d7",
-  client_secret: "9953e22176c6a2fd9c842c9c6be50840ded27bed"
+  client_id: System.get_env("GITHUB_CLIENT_ID"),
+  client_secret: System.get_env("GITHUB_CLIENT_SECRET")
